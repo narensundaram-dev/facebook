@@ -1,0 +1,55 @@
+|=================|
+|Mandatory Inputs:|
+|=================|
+
+	- Group ID
+	- Date of the post
+	- Post Name starts with a certain special character:
+
+|===============|
+|Optional Input:|
+|===============|
+
+	- Time of the post
+
+|=======================|
+|Output Fields in Excel:|
+|=======================|
+
+	- Post Description
+	- Post Date and Time
+	- Comment
+	- Commented UserName
+	- Comment Reply
+	- Replied UserName
+
+To get list of feeds:
+
+	<div role="feed">...</div> ==============================================> soup.select('div.du4w35lb.k4urcfbm.l9j0dhe7.sjgh65i0')
+		<div class="du4w35lb k4urcfbm l9j0dhe7 sjgh65i0">...</div>
+		<div class="du4w35lb k4urcfbm l9j0dhe7 sjgh65i0">...</div>
+		<div class="du4w35lb k4urcfbm l9j0dhe7 sjgh65i0">...</div>
+		
+To click "View /d more comments":
+	
+	soup.find_all('span', text=re.compile('View \d+ more comments'))
+	
+To get all comments:
+	
+	soup.find_all("div", attrs={"aria-label" : re.compile('Comment by .* ago')})
+	
+To get all replies:
+
+	soup.find_all("div", attrs={"aria-label" : re.compile('Reply by .* ago')})
+
+Soupify:
+
+	1. username => <h2 id="jsc_c_1p">...</h2>
+	2. date and time => <span id="jsc_c_1q">...</span> (July 10 at 11:59 PM, 21 hrs, Yesterday at 4:06 PM)
+	3. description => <div data-ad-preview="message">...</div>
+	4. comment && comment by => 
+			<span class="oi732d6d ik7dh3pa d2edcug0 qv66sw1b c1et5uql a8c37x1j hop8lmos enqfppq2 e9vueds3 j5wam9gi lrazzd5p oo9gr5id" dir="auto"> [0] => comment by
+			<span class="oi732d6d ik7dh3pa d2edcug0 qv66sw1b c1et5uql a8c37x1j hop8lmos enqfppq2 e9vueds3 j5wam9gi lrazzd5p oo9gr5id" dir="auto"> [1] => comment
+	5. reply && reply by
+			<span class="oi732d6d ik7dh3pa d2edcug0 qv66sw1b c1et5uql a8c37x1j hop8lmos enqfppq2 e9vueds3 j5wam9gi lrazzd5p oo9gr5id" dir="auto"> [0] => reply by
+			<span class="oi732d6d ik7dh3pa d2edcug0 qv66sw1b c1et5uql a8c37x1j hop8lmos enqfppq2 e9vueds3 j5wam9gi lrazzd5p oo9gr5id" dir="auto"> [1] => reply
