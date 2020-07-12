@@ -28,8 +28,8 @@ f = open("fb.html", "r")
 html = f.read()
 
 soup = BeautifulSoup(html, "html.parser")
-with open("fb_live.html", "w+") as fb_live:
-    fb_live.write(soup.prettify())
+# with open("fb_live.html", "w+") as fb_live:
+#     fb_live.write(soup.prettify())
 
 posts = soup.find("div", role="feed").select('div.du4w35lb.k4urcfbm.l9j0dhe7.sjgh65i0')
 print("{} posts found!".format(len(posts)))
