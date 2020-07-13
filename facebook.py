@@ -4,7 +4,7 @@ import time
 import json
 import argparse
 import traceback
-from datetime import datetime as dt
+from datetime import datetime as dt, timedelta as td
 from concurrent.futures import as_completed, ThreadPoolExecutor
 
 import pandas as pd
@@ -29,7 +29,7 @@ def get_args():
     arg_parser.add_argument('-gid', "--group_id", type=str, required=True)
     arg_parser.add_argument("-pc", "--post_contains", type=str, help="Post description contains ...", required=False)
     arg_parser.add_argument("-d", "--date", type=str, help="MM/DD/YYYY ['12/31/2019']")
-    arg_parser.add_argument("-dt", "--datetime", type=str, help="MM/DD/YYYY HH:MM ['12/31/2019 13:05']")
+    arg_parser.add_argument("-dt", "--datetime", type=str, help="MM/DD/YYYY HH:MM AM/PM ['12/31/2019 1:05 PM']")
     return arg_parser.parse_args()
 args = get_args()
 
@@ -77,7 +77,7 @@ for idx, post in enumerate(posts):
     print(f"Comments: {len(comments)}")
 
     data.append({
-        "#": idx+1,
+        # "#": idx+1,
         "post_by": username,
         "date": post_date,
         "post_date": post_date_str,
@@ -98,7 +98,7 @@ for idx, post in enumerate(posts):
         replies = post.find_all("div", attrs={"aria-label" : "Comment reply"})
 
         data.append({
-            "#": idx+1,
+            # "#": idx+1,
             "post_by": username,
             "date": post_date,
             "post_date": post_date_str,
@@ -122,7 +122,7 @@ for idx, post in enumerate(posts):
                 reply_content = "NA"
 
             data.append({
-                "#": idx+1,
+                # "#": idx+1,
                 "post_by": username,
                 "date": post_date,
                 "post_date": post_date_str,
@@ -146,14 +146,18 @@ df = pd.DataFrame(data)
 
 df['date'] = pd.to_datetime(df['date'])
 if args.date:
-    date_ = dt.strptime(args.date, "%m/%d/%Y").strftime("%Y-%m-%d")
-    df = df[df['date'] == date_]
+    date_ = dt.strptime(args.date, "%m/%d/%Y")
+    start = date_.strftime("%Y-%m-%d")
+    end = (date_ + td(days=1)).strftime("%Y-%m-%d")
+    df = df[(df['date'] >= start) & (df['date'] < end)]
 
 if args.datetime:
-    pass
+    datetime_ = dt.strptime(args.datetime, "%m/%d/%Y %I:%M %p")
+    df = df[df["date"] == datetime_]
 
 if args.post_contains:
-    pass
+    df = df[df["post_description"].str.contains(args.post_contains, case=False)]
 
-columns = ["#", "post_by", "post_date", "post_description", "comment", "comment_by", "reply", "reply_by"]
+print(f"{len(df)} no of data has been stored in facebook_data.xlsx file")
+columns = ["post_by", "post_date", "post_description", "comment", "comment_by", "reply", "reply_by"]
 df.to_excel('facebook_data.xlsx', columns=columns, index=False, engine='xlsxwriter', encoding="UTF-8")
