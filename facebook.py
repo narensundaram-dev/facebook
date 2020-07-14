@@ -16,12 +16,15 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 
+
 # All neccessary data stored here
 data = []
+
 
 # Load settings
 with open("settings.json", "r") as f:
     settings = json.load(f)
+
 
 # Script args from user as input
 def get_args():
@@ -34,11 +37,65 @@ def get_args():
 args = get_args()
 
 
+fb_url = "https://www.facebook.com"
+options = webdriver.ChromeOptions()
+options.add_argument("--disable-notifications")
+chrome = webdriver.Chrome(settings["driver_path"]["value"], chrome_options=options)
+chrome.get(fb_url)
+
+
+# Login with facebook credentials
+chrome.find_element_by_name("email").send_keys(settings["fb_username"]["value"])
+chrome.find_element_by_name("pass").send_keys(settings["fb_password"]["value"])
+chrome.find_element_by_xpath("//*[@id='u_0_b']").click()
+time.sleep(2)
+
+
 # Open chrome browser and load the group page
-url = "https://www.facebook.com/groups/" + args.group_id
-chrome = webdriver.Chrome(settings["driver_path"]["value"])
-chrome.get(url)
+fb_group_url = fb_url + "/groups/" + args.group_id
+chrome.get(fb_group_url)
 WebDriverWait(chrome, 30).until(EC.presence_of_element_located((By.CSS_SELECTOR, "[role=feed]")))
+with open("fb.html", "w+") as f:
+    f.write(chrome.page_source)
+
+
+# Scroll the web-page until the previous date of the inputs (-d or -dt) is captured
+if args.date or args.datetime:
+    if args.date:
+        date_ = dt.strptime(args.date, "%m/%d/%Y").date()
+    else:
+        date_ = dt.strptime(args.date, "%m/%d/%Y %I:%M %p").date()
+    target_date = date_ + td(days=-1)  # previous date of the input
+
+    last_height = chrome.execute_script("return document.body.scrollHeight")
+    initial_height = last_height
+    scroll_to = 2000
+    wait = settings["page_scroll_wait"]["value"]
+    print("Starts scrolling...")
+
+
+    count = 0
+    while True:
+        chrome.execute_script("window.scroll({top: " + str(scroll_to) + ", behavior: 'smooth'});")
+        new_height = chrome.execute_script("return document.body.scrollHeight")
+        time.sleep(2)
+
+        soup = BeautifulSoup(chrome.page_source, "html.parser")
+        posts = soup.find("div", role="feed").find_all("div", role="article", attrs={"id": re.compile("mall_post_.*")})
+        print("len of posts: ", len(posts))
+        last_post = posts[-1]
+        post_date = last_post.find("abbr").attrs["title"]
+        post_date = dt.strptime(post_date, "%A, %d %B %Y at %H:%M").date()
+
+        print("post_date | target_date | cnd => ", post_date, target_date, post_date == target_date)
+        if post_date <= target_date or count >= 50:
+            print("Ends scrolling...")
+            break
+
+        count += 1
+        scroll_to += 2000
+        last_height = new_height
+
 
 # Expanding links of "See More" and "View \d+ comments"
 for element in chrome.find_elements_by_class_name("see_more_link_inner"):
@@ -48,9 +105,11 @@ for element in chrome.find_elements_by_css_selector("._5v47.fss"):
 for element in chrome.find_elements_by_css_selector("._3eol.ellipsis"):
     webdriver.ActionChains(chrome).move_to_element(element).click(element).perform()
 
+
 # Getting source code of the web page
 html = chrome.page_source
 soup = BeautifulSoup(html, "html.parser")
+
 
 # Loading all the posts
 posts = soup.find("div", role="feed").find_all("div", role="article", attrs={"id": re.compile("mall_post_.*")})
@@ -137,13 +196,13 @@ for idx, post in enumerate(posts):
 
     print("\n")
 
+
 # Close chrome browser once the job is done
 chrome.close()
 
 
 # Filter data and save it to xlsx file
 df = pd.DataFrame(data)
-
 df['date'] = pd.to_datetime(df['date'])
 if args.date:
     date_ = dt.strptime(args.date, "%m/%d/%Y")

@@ -3,8 +3,20 @@
         "value": 4,
         "description": "Max. no of threads to run in concurrent. If no idea, leave as it is. Or take advice from developer. To increase speed."
     },
+    "fb_username": {
+        "value": "xxxx",
+        "description": "FB username"
+    },
+    "fb_password": {
+        "value": "xxxx",
+        "description": "FB password"
+    },
     "driver_path": {
         "value": "/home/narendran/Documents/chromedriver",
         "description": "Absolute path to the chromedriver executable."
+    },
+    "page_scroll_wait": {
+        "value": 1,
+        "description": ""
     }
 }
